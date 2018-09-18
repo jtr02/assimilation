@@ -16,7 +16,7 @@ program lorenz96
   ! runge-kutta_2     : 6,2
   ! runge-kutta_3     : 7,3
   ! runge-kutta_4     : 8,4
-  integer, parameter :: fds(2) = (/ 3 , 2 /)
+  integer, parameter :: fds(2) = (/ 2 , 2 /)
 
   ! variable
   real, allocatable :: f(:, :)
@@ -32,6 +32,7 @@ program lorenz96
   write(*,*) 'time step   =      ',dt
   write(*,*) 'forcing     =      ',forcing
   write(*,*) 'finite difference scheme = ',fds(1)
+  write(*,*) '                  order  = ',fds(2)
 
   ! input initial condition
   allocate(f(nx+2, nt+1))
@@ -62,7 +63,7 @@ program lorenz96
      else if(fds(1).ge.3 .and. fds(2).eq.4) then
         call adams_bashforth(fds(2), nx, dt, forcing, f(0:nx+1,t), f(0:nx+1,t-1), f(0:nx+1,t-2), f(0:nx+1,t-3), f(0:nx+1,t+1))
      else if(fds(1).ge.6 .and. fds(1).le.8) then
-!        call runge_kutta(fds(1), nx, dt, forcing, f(0:nx+1,t), f(0:nx+1,t-1), f(0:nx+1,t-2), f(0:nx+1,t-3), f(0:nx+1,t+1))
+        call runge_kutta(fds(2), nx, dt, forcing, f(0:nx+1,t), f(0:nx+1,t+1))
      end if
 
   end do
@@ -116,9 +117,9 @@ contains
     end do
   end subroutine leapfrog
 
-  subroutine adams_bashforth(dim, nx, dt, forcing, f0, f1, f2, f3, g)
+  subroutine adams_bashforth(order, nx, dt, forcing, f0, f1, f2, f3, g)
     implicit none
-    integer, intent(in) :: dim
+    integer, intent(in) :: order
     integer, intent(in) :: nx
     real,    intent(in) :: dt
     real,    intent(in) :: forcing
@@ -129,11 +130,11 @@ contains
     real, dimension(0:nx+1), intent(out) :: g  !(t=t+1)
     real, dimension(0:3) :: a
     integer :: x
-    if(dim.eq.2) then
+    if(order.eq.2) then
        a = (/ 1.5d0, -0.5d0, 0.0d0, 0.0d0 /)
-    else if(dim.eq.3) then
+    else if(order.eq.3) then
        a = (/ 23.0d0/12.0d0, -4.0d0/3.0d0, 5.0d0/12.0d0, 0.0d0 /)
-    else if(dim.eq.4) then
+    else if(order.eq.4) then
        a = (/ 55.0d0/24.0d0, -59.0d0/24.0d0, 37.0d0/24.0d0, -9.0d0/24.0d0 /)
     end if
     do x = 1, nx
@@ -144,23 +145,23 @@ contains
     end do
   end subroutine adams_bashforth
 
-  subroutine runge_kutta(dim, nx, dt, forcing, f, g)
+  subroutine runge_kutta(order, nx, dt, forcing, f, g)
     implicit none
-    integer, intent(in) :: dim
+    integer, intent(in) :: order
     integer, intent(in) :: nx
     real,    intent(in) :: dt
     real,    intent(in) :: forcing
     real, dimension(0:nx+1), intent(in)  :: f !(t=t)
-    real, dimension(0:nx+1), intent(out) :: g  !(t=t+1)
+    real, dimension(0:nx+1), intent(out) :: g !(t=t+1)
     real, dimension(1:4) :: a
     real    :: k1, k2, k3, k4
     integer :: x
-    if(dim.eq.2) then
-       a = (/ 1.5d0, -0.5d0, 0.0d0, 0.0d0 /)
-    else if(dim.eq.3) then
-       a = (/ 23.0d0/12.0d0, -4.0d0/3.0d0, 5.0d0/12.0d0, 0.0d0 /)
-    else if(dim.eq.4) then
-       a = (/ 55.0d0/24.0d0, -59.0d0/24.0d0, 37.0d0/24.0d0, -9.0d0/24.0d0 /)
+    if(order.eq.2) then
+       a = (/ 1.0d0, 0.5d0, 0.0d0, 0.0d0 /)
+    else if(order.eq.3) then
+       a = (/ 1.0d0/3.0d0, 15.0d0/16.0d0, 8.0d0/15.0d0, 0.0d0 /)
+    else if(order.eq.4) then
+       a = (/ 1.0d0/6.0d0, 2.0d0/6.0d0, 2.0d0/6.0d0, 1.0d0/6.0d0 /)
     end if
     do x = 1, nx
 !       g(x) = f0(x) + dt * ( a(0) * ( f0(x+1)-f0(x-2) ) * f0(x-1)  - f0(x) + forcing &
@@ -181,7 +182,7 @@ contains
     write(31,*)	'xdef ',nx,' linear 1 1'
     write(31,*)	'ydef 1 levels 0'
     write(31,*) 'zdef 1 levels 1000'
-    write(31,*) 'tdef ',nta,' linear 00z27jun1990 1mn'
+    write(31,*) 'tdef ',nta,' linear 00z01jan0000 72mn'
     write(31,*) 'vars 1'
     write(31,*) 'f 0 99 variable'
     write(31,*) 'endvars'
