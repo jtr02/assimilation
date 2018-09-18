@@ -16,7 +16,7 @@ program lorenz96
   ! runge-kutta_2     : 6,2
   ! runge-kutta_3     : 7,3
   ! runge-kutta_4     : 8,4
-  integer, parameter :: fds(2) = (/ 2 , 2 /)
+  integer, parameter :: fds(2) = (/ 3 , 2 /)
 
   ! variable
   real, allocatable :: f(:, :)
