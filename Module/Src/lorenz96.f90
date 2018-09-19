@@ -32,7 +32,7 @@ program lorenz96
   write(*,*) 'integration time = ',nt
   write(*,*) 'time step   =      ',dt
   write(*,*) 'forcing     =      ',forcing
-  write(*,*) 'perterbation =     ',ptb
+  write(*,*) 'perturbation =     ',ptb
   write(*,*) 'finite difference scheme = ',fds(1)
   write(*,*) '                  order  = ',fds(2)
 
