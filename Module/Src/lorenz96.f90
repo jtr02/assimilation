@@ -3,9 +3,10 @@ program lorenz96
 
   ! for integration
   integer, parameter :: nx = 40
-  integer, parameter :: nt = 2000
+  integer, parameter :: nt = 5000
   real, parameter    :: dt = 0.01d0
-  real, parameter    :: forcing = 2.0d0
+  real, parameter    :: forcing = 8.0d0
+  real, parameter    :: ptb = 0.01d0
 
   ! finite difference scheme
   ! forward-euler_1   : 1,1
@@ -16,7 +17,7 @@ program lorenz96
   ! runge-kutta_2     : 6,2
   ! runge-kutta_3     : 7,3
   ! runge-kutta_4     : 8,4
-  integer, parameter :: fds(2) = (/ 3 , 2 /)
+  integer, parameter :: fds(2) = (/ 1 , 1 /)
 
   ! variable
   real, allocatable :: f(:, :)
@@ -31,18 +32,18 @@ program lorenz96
   write(*,*) 'integration time = ',nt
   write(*,*) 'time step   =      ',dt
   write(*,*) 'forcing     =      ',forcing
+  write(*,*) 'perterbation =     ',ptb
   write(*,*) 'finite difference scheme = ',fds(1)
   write(*,*) '                  order  = ',fds(2)
 
-  ! input initial condition
   allocate(f(nx+2, nt+1))
-!  open(unit=10, file="initial.grd", access='direct',form='unformatted',convert='big_endian',recl=nx*4)
-!  read(10,rec=1) f(1:nx, 1)
-!  close(10)
 
-  ! test initial
-  f(:,:)=0.0
-  f(nx/2, 1) = 5
+  ! initial condition
+  f(:,:) = 0.0d0
+  f(1:nx,1) = forcing
+  call add_random_ptb(nx, ptb, f(1:nx,1))
+
+  ! integration start
 
   call cpu_time(st)
 
@@ -70,6 +71,8 @@ program lorenz96
 
   call cpu_time(et)
 
+  ! integration end
+
   ! output
   open(unit=21,file="output.grd", access='direct',form='unformatted',convert='big_endian',recl=nx*4)
   do t = 1, nt+1
@@ -81,6 +84,16 @@ program lorenz96
   write(*,*) 'time for calculation = ',et-st,'seconds'
 
 contains
+  subroutine add_random_ptb(nx, norm, f)
+    implicit none
+    integer, intent(in)      :: nx
+    real   , intent(in)      :: norm
+    real   , dimension(1:nx), intent(inout) :: f
+    real   , dimension(1:nx) :: rnd
+    call random_number(rnd)
+    f(1:nx) = f(1:nx) + (-1.0d0 + rnd(1:nx) * 2.0d0) * f(1:nx) * norm
+  end subroutine add_random_ptb
+
   subroutine set_boundary_condition(nx, f)
     implicit none
     integer, intent(in) :: nx
