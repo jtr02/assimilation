@@ -12,13 +12,13 @@ program lorenz96
   ! option
   integer :: imem
   integer :: pmem
-  double precision :: ptb
 
   ! for output
   integer, parameter :: uop = 51
 
   ! variable
   double precision, allocatable :: f(:,:)
+  double precision :: norm
 
   ! etc
   real(kind=16) :: st, et
@@ -26,18 +26,17 @@ program lorenz96
   integer :: i, j, k
 
   namelist/model/nx, nt, dt, forcing
-  namelist/option/imem, pmem, ptb 
+  namelist/option/imem, pmem 
   open(unit=unm, file='namelist')
   read(unm, nml=model)
   read(unm, nml=option)
   close(unm)
 
   write(*,*) 'this program calculate Lorenz96 model integration'
-  write(*,*) 'grid number =      ',nx
+  write(*,*) 'grid number      = ',nx
   write(*,*) 'integration time = ',nt
-  write(*,*) 'time step   =      ',dt
-  write(*,*) 'forcing     =      ',forcing
-  write(*,*) 'perturbation =     ',ptb
+  write(*,*) 'time step        = ',dt
+  write(*,*) 'forcing          = ',forcing
   write(*,*) 'finite difference scheme = runge-kutta'
   write(*,*) '                  order  = 4th'
 
@@ -52,7 +51,8 @@ program lorenz96
      f(1:nx,1) = forcing * i / imem
      ! loop of perturbation
      do j = 1, pmem
-        call add_random_ptb(nx, ptb, f(1:nx,1))
+        call add_random_ptb(nx, f(1:nx,1), norm)
+        write(*,*) 'norm = ',norm
         ! loop of time
         do t = 1, nt
            call set_boundary_condition(nx, f(-1:nx+2,t))
@@ -61,8 +61,8 @@ program lorenz96
      end do
   end do
 
-  call cpu_time(et)
   ! integration end
+  call cpu_time(et)
 
   ! output
   open(unit=uop,file="output.grd", access='direct',form='unformatted',convert='big_endian',recl=nx*4)
@@ -75,21 +75,24 @@ program lorenz96
   write(*,*) 'time for calculation = ',et-st,'seconds'
 
 contains
-  subroutine add_random_ptb(nx, norm, f)
+  subroutine add_random_ptb(nx, f, norm)
     implicit none
     integer, intent(in)          :: nx
-    double precision, intent(in) :: norm
     double precision, dimension(1:nx), intent(inout) :: f
+    double precision, intent(out) :: norm
     integer :: c, seedsize
     integer, allocatable :: seed(:)
-    double precision, dimension(1:nx) :: rnd
+    double precision, dimension(1:nx) :: ptb
     call system_clock(count=c)
     call random_seed(size=seedsize)
     allocate(seed(seedsize))
     seed(:) = c
     call random_seed(put=seed(:))
-    call random_number(rnd(:))
-    f(1:nx) = f(1:nx) + (-1.0d0 + rnd(1:nx) * 2.0d0) * f(1:nx) * norm
+    call random_number(ptb(:))
+    ptb(1:nx) = (-1.0d0 + ptb(1:nx) * 2.0d0) * f(1:nx) * 0.01d0
+    f(1:nx) = f(1:nx) + ptb(1:nx)
+    ptb(1:nx) = ptb(1:nx) * ptb(1:nx)
+    norm = sqrt(sum(ptb(1:nx)))
   end subroutine add_random_ptb
 
   subroutine set_boundary_condition(nx, f)
